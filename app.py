@@ -100,7 +100,7 @@ def task_scheduler(tasks_data, machines_list):
 # --- 3. Streamlit UI --- 
 st.set_page_config(page_title="Resource Allocatiion System", layout="wide")
 st.title("⚙️ JobShop Resource Optimizer")
-st.markdown("Yeh system **Job Shop Scheduling (JSSP)** ke algorithms par mabni hai.")
+st.markdown("This system based on **Job Shop Scheduling (JSSP)** algorithm.")
 
 # Sidebar for File Upload
 st.sidebar.header("Data Source")
@@ -146,4 +146,5 @@ if uploaded_file:
         st.error("File format sahi nahi hai.")
 else:
     st.info("Baraye maharbani sidebar se .txt file upload karein.")
+
 
