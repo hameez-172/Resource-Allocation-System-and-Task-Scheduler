@@ -105,7 +105,7 @@ def task_scheduler(tasks_data, machines_list):
 # --- 3. Streamlit UI --- 
 st.set_page_config(page_title="JobShop Pro Optimizer", layout="wide")
 st.title("⚙️ JobShop Resource Optimizer")
-[cite_start]st.markdown("Yeh system **Job Shop Scheduling (JSSP)** ke algorithms par mabni hai.")
+[cite_start]st.markdown("Yeh system **Job Shop Scheduling (JSSP)** ke algorithms par mabni hai. [cite: 1, 7]")
 
 # Sidebar for File Upload
 st.sidebar.header("Data Source")
