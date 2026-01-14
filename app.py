@@ -17,10 +17,8 @@ def parse_jobshop_data(content):
     tasks_input = {}
     job_count = 0
     
-    # Dataset parsing logic for Taillard format
     for line in lines:
         clean_line = line.strip()
-        # Skip empty lines or header info
         if not clean_line or clean_line.startswith('[') or clean_line.startswith('source'):
             continue
             
@@ -30,7 +28,6 @@ def parse_jobshop_data(content):
         job_count += 1
         job_id = f"Job_{job_count}"
         
-        # Numbers ko pairs mein read karna (Machine_ID, Duration)
         for j in range(0, len(parts), 2):
             if j+1 >= len(parts): break
             
@@ -39,7 +36,6 @@ def parse_jobshop_data(content):
             machine_id = f"M{parts[j]}"
             duration = int(parts[j+1])
             
-            # [cite_start]Dependency logic [cite: 14, 15]
             dependencies = [f"{job_id}_T{task_num-1}"] if task_num > 1 else []
                 
             tasks_input[task_id] = {
@@ -61,7 +57,7 @@ def task_scheduler(tasks_data, machines_list):
     if not nx.is_directed_acyclic_graph(G):
         return None, None
 
-    # [cite_start]Critical Path Analysis (Graph Theory) [cite: 1, 7]
+    # Critical Path Analysis (Graph Theory) 
     critical_path = nx.dag_longest_path(G, weight='duration')
     
     machine_free_time = {m: 0 for m in machines_list}
@@ -69,7 +65,7 @@ def task_scheduler(tasks_data, machines_list):
     schedule = []
     completed_tasks = set()
 
-    # [cite_start]Priority Rule: Shortest Job First [cite: 16]
+    # Shortest Job First rule based on DAG [cite: 14, 15, 16]
     while len(completed_tasks) < len(tasks_data):
         ready_tasks = [
             n for n in G.nodes() 
@@ -84,7 +80,6 @@ def task_scheduler(tasks_data, machines_list):
             if target_machine not in machine_free_time:
                 machine_free_time[target_machine] = 0
             
-            # [cite_start]Start time calculation [cite: 17, 18]
             dep_finish_times = [task_finish_time[d] for d in G.predecessors(task_id)]
             start_time = max([machine_free_time[target_machine]] + dep_finish_times)
             end_time = start_time + tasks_data[task_id]['duration']
@@ -105,7 +100,7 @@ def task_scheduler(tasks_data, machines_list):
 # --- 3. Streamlit UI --- 
 st.set_page_config(page_title="JobShop Pro Optimizer", layout="wide")
 st.title("⚙️ JobShop Resource Optimizer")
-[cite_start]st.markdown("Yeh system **Job Shop Scheduling (JSSP)** ke algorithms par mabni hai. [cite: 1, 7]")
+st.markdown("Yeh system **Job Shop Scheduling (JSSP)** ke algorithms par mabni hai.")
 
 # Sidebar for File Upload
 st.sidebar.header("Data Source")
@@ -150,4 +145,4 @@ if uploaded_file:
     else:
         st.error("File format sahi nahi hai.")
 else:
-    st.info("Sidebar se .txt file upload karein.")
+    st.info("Baraye maharbani sidebar se .txt file upload karein.")
