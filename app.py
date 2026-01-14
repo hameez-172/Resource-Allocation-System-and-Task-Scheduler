@@ -8,23 +8,39 @@ import io
 def parse_jobshop_data(content):
     """Taillard format (.txt) ko dictionary mein convert karne ke liye"""
     lines = content.strip().split('\n')
-    # Metadata nikalna (Jobs aur Machines ki tadaad)
     try:
         header = lines[0].split()
-        num_jobs = int(header[0])
+        if not header: return None
     except:
         return None
 
     tasks_input = {}
-    # Line 1 ke baad se har line ek Job hai
-    for i, line in enumerate(lines[1:]):
-        if "}"
+    job_count = 0
+    
+    # Dataset parsing logic for Taillard format
+    for line in lines:
+        clean_line = line.strip()
+        # Skip empty lines or header info
+        if not clean_line or clean_line.startswith('[') or clean_line.startswith('source'):
+            continue
+            
+        parts = clean_line.split()
+        if len(parts) < 2: continue
+        
+        job_count += 1
+        job_id = f"Job_{job_count}"
+        
+        # Numbers ko pairs mein read karna (Machine_ID, Duration)
+        for j in range(0, len(parts), 2):
+            if j+1 >= len(parts): break
+            
+            task_num = (j // 2) + 1
+            task_id = f"{job_id}_T{task_num}"
+            machine_id = f"M{parts[j]}"
             duration = int(parts[j+1])
             
-            # Dependency: Job ka har task pichle task par depend karta hai
-            dependencies = []
-            if j > 0:
-                dependencies = [f"{job_id}_T{j//2}"]
+            # [cite_start]Dependency logic [cite: 14, 15]
+            dependencies = [f"{job_id}_T{task_num-1}"] if task_num > 1 else []
                 
             tasks_input[task_id] = {
                 'duration': duration, 
@@ -45,7 +61,7 @@ def task_scheduler(tasks_data, machines_list):
     if not nx.is_directed_acyclic_graph(G):
         return None, None
 
-    # Critical Path Analysis
+    # [cite_start]Critical Path Analysis (Graph Theory) [cite: 1, 7]
     critical_path = nx.dag_longest_path(G, weight='duration')
     
     machine_free_time = {m: 0 for m in machines_list}
@@ -53,7 +69,7 @@ def task_scheduler(tasks_data, machines_list):
     schedule = []
     completed_tasks = set()
 
-    # [cite_start]Shortest Job First rule based on DAG [cite: 14, 15, 16]
+    # [cite_start]Priority Rule: Shortest Job First [cite: 16]
     while len(completed_tasks) < len(tasks_data):
         ready_tasks = [
             n for n in G.nodes() 
@@ -67,7 +83,8 @@ def task_scheduler(tasks_data, machines_list):
             target_machine = tasks_data[task_id].get('machine', machines_list[0])
             if target_machine not in machine_free_time:
                 machine_free_time[target_machine] = 0
-                
+            
+            # [cite_start]Start time calculation [cite: 17, 18]
             dep_finish_times = [task_finish_time[d] for d in G.predecessors(task_id)]
             start_time = max([machine_free_time[target_machine]] + dep_finish_times)
             end_time = start_time + tasks_data[task_id]['duration']
@@ -88,19 +105,18 @@ def task_scheduler(tasks_data, machines_list):
 # --- 3. Streamlit UI --- 
 st.set_page_config(page_title="JobShop Pro Optimizer", layout="wide")
 st.title("⚙️ JobShop Resource Optimizer")
-[cite_start]st.markdown("Yeh system **Job Shop Scheduling (JSSP)** ke algorithms par mabni hai. [cite: 1, 7]")
+[cite_start]st.markdown("Yeh system **Job Shop Scheduling (JSSP)** ke algorithms par mabni hai.")
 
 # Sidebar for File Upload
 st.sidebar.header("Data Source")
 uploaded_file = st.sidebar.file_uploader("Taillard Dataset (.txt) upload karein", type=["txt"])
 
 if uploaded_file:
-    # Parsing
     content = uploaded_file.getvalue().decode("utf-8")
     tasks_input = parse_jobshop_data(content)
     
     if tasks_input:
-        machines = list(set([info['machine'] for info in tasks_input.values()]))
+        machines = sorted(list(set([info['machine'] for info in tasks_input.values()])))
         st.sidebar.success(f"Loaded {len(tasks_input)} tasks on {len(machines)} machines.")
 
         if st.button("Generate Optimized Schedule"):
@@ -108,21 +124,18 @@ if uploaded_file:
             
             if result:
                 df = pd.DataFrame(result)
-                
-                # Metrics
                 makespan = df['Finish'].max()
+                
                 m1, m2 = st.columns(2)
                 m1.metric("Total Makespan (Completion Time)", f"{makespan} units")
                 m2.metric("Critical Tasks Count", len(cp))
 
-                # Gantt Chart
                 st.subheader("Timeline Visualization (Gantt Chart)")
                 fig = px.timeline(df, x_start="Start", x_end="Finish", y="Machine", 
                                   color="Is_Critical", 
                                   color_discrete_map={True: "red", False: "blue"},
                                   hover_data=["Task"])
                 fig.layout.xaxis.type = 'linear'
-                # Fix for Plotly linear timeline
                 for d in fig.data:
                     filt = df[df['Is_Critical'] == (d.name == 'True')]
                     d.x = filt['Finish'] - filt['Start']
@@ -130,12 +143,11 @@ if uploaded_file:
                 
                 st.plotly_chart(fig, use_container_width=True)
 
-                # Export
                 csv = df.to_csv(index=False).encode('utf-8')
                 st.download_button("Download Schedule CSV", csv, "job_schedule.csv", "text/csv")
             else:
-                st.error("Algorithm failed. Please check data for circular dependencies.")
+                st.error("Algorithm failed. Please check for circular dependencies.")
     else:
-        st.error("File format sahi nahi hai. Taillard format use karein.")
+        st.error("File format sahi nahi hai.")
 else:
-    st.info("Baraye maharbani sidebar se apna dataset (.txt file) upload karein.")
+    st.info("Sidebar se .txt file upload karein.")
