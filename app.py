@@ -98,7 +98,7 @@ def task_scheduler(tasks_data, machines_list):
     return schedule, critical_path
 
 # --- 3. Streamlit UI --- 
-st.set_page_config(page_title="JobShop Pro Optimizer", layout="wide")
+st.set_page_config(page_title="Resource Allocatiion System", layout="wide")
 st.title("⚙️ JobShop Resource Optimizer")
 st.markdown("Yeh system **Job Shop Scheduling (JSSP)** ke algorithms par mabni hai.")
 
@@ -146,3 +146,4 @@ if uploaded_file:
         st.error("File format sahi nahi hai.")
 else:
     st.info("Baraye maharbani sidebar se .txt file upload karein.")
+
